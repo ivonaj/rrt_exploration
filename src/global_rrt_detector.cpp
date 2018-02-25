@@ -66,7 +66,6 @@ int main(int argc, char **argv)
 // generate the same numbers as in the original C test program
   ros::init(argc, argv, "global_rrt_frontier_detector");
   ros::NodeHandle nh;
-  
   // fetching all parameters
   float eta,init_map_x,init_map_y,range;
   std::string map_topic,base_frame_topic;
@@ -88,7 +87,7 @@ ros::Rate rate(100);
  
 // wait until map is received, when a map is received, mapData.header.seq will not be < 1  
 while (mapData.header.seq<1 or mapData.data.size()<1)  {  ros::spinOnce();  ros::Duration(0.1).sleep();}
-
+//while (mapData.data.size()<1)  {  ros::spinOnce();  ros::Duration(0.1).sleep();}
 
 
 //visualizations  points and lines..

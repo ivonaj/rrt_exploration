@@ -17,7 +17,7 @@ class robot:
 	def __init__(self,name):
 		self.assigned_point=[]
 		self.name=name
-		self.global_frame=rospy.get_param('~global_frame','/robot_1/map')
+		self.global_frame=rospy.get_param('~global_frame','/map')
 		self.listener=tf.TransformListener()
 		self.listener.waitForTransform(self.global_frame, name+'/base_link', rospy.Time(0),rospy.Duration(10.0))
 		cond=0;	
@@ -69,8 +69,9 @@ class robot:
 		robot.start.pose.position.y=start[1]
 		robot.end.pose.position.x=end[0]
 		robot.end.pose.position.y=end[1]
-		start=self.listener.transformPose(self.name+'/map', robot.start)
-		end=self.listener.transformPose(self.name+'/map', robot.end)
+		#start=self.listener.transformPose(self.name+'/map', robot.start)
+		start=self.listener.transformPose('/map', robot.start)
+		end=self.listener.transformPose('/map', robot.end)
 		plan=self.make_plan(start = start, goal = end, tolerance = 0.0)
 		return plan.plan.poses	
 #________________________________________________________________________________

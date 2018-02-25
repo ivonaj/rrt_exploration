@@ -39,7 +39,7 @@ def node():
 	rospy.init_node('assigner', anonymous=False)
 	
 	# fetching all parameters
-	map_topic= rospy.get_param('~map_topic','/robot_1/map')
+	map_topic= rospy.get_param('~map_topic','/robot_0/map')
 	info_radius= rospy.get_param('~info_radius',1.0)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
 	info_multiplier=rospy.get_param('~info_multiplier',3.0)		
 	hysteresis_radius=rospy.get_param('~hysteresis_radius',3.0)			#at least as much as the laser scanner range
@@ -65,7 +65,7 @@ def node():
 
 	robots=[]
 	for i in range(0,n_robots):
-		robots.append(robot('/robot_'+str(i+1)))
+		robots.append(robot('/robot_'+str(i)))
 	for i in range(0,n_robots):
 		robots[i].sendGoal(robots[i].getPosition())
 #-------------------------------------------------------------------------

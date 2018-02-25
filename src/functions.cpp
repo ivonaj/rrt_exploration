@@ -91,7 +91,37 @@ out=Data[int(indx)];
 return out;
 }
 
+inline float getCellIndex(float cell_x_new,float cell_y_new, float width) {return ( cell_y_new*width)+cell_x_new;}
+//search for outliers by checking neighbours of free space cells
+char checkNeighbours(nav_msgs::OccupancyGrid &mapData,std::vector<float> Xp){
 
+
+    //std::vector<float> neigbours;
+    float resolution=mapData.info.resolution;//m/cell
+    float Xstartx=mapData.info.origin.position.x;
+    float Xstarty=mapData.info.origin.position.y;
+
+    float width=mapData.info.width;
+    float height=mapData.info.height;
+    std::vector<signed char> Data=mapData.data;
+
+    float cell_y=floor((Xp[1]-Xstarty)/resolution);
+    float cell_x=floor((Xp[0]-Xstartx)/resolution);
+
+
+
+    for (int i=-1;i<=1;i++){
+        for(int j=-1;j<=1;j++){
+            //neigbours.push_back(getIndex(cell_x+i,cell_y+j));
+            if (Data[int(getCellIndex(cell_x+i,cell_y+j,width))]>30) return 1;
+
+
+
+        }
+
+    }
+    return 0;
+}
 
 
 // ObstacleFree function-------------------------------------
@@ -100,26 +130,33 @@ char ObstacleFree(std::vector<float> xnear, std::vector<float> &xnew, nav_msgs::
 float rez=float(mapsub.info.resolution)*.2;
 float stepz=int(ceil(Norm(xnew,xnear))/rez); 
 std::vector<float> xi=xnear;
-char  obs=0; char unk=0;
+char  obs=0; char unk=0; char free=0;
  
 geometry_msgs::Point p;
 for (int c=0;c<stepz;c++){
   xi=Steer(xi,xnew,rez);
   		
 
-   if (gridValue(mapsub,xi) ==100){     obs=1; }
-   
-   if (gridValue(mapsub,xi) ==-1){      unk=1;	break;}
+   //if (gridValue(mapsub,xi) ==100){     obs=1; }
+    if (gridValue(mapsub,xi) >=20) {     obs=1; }
+
+
+    if (gridValue(mapsub,xi) ==-1){      unk=1;	break;}
+
+    if (gridValue(mapsub,xi)<20) {free=1;
+        }
+
   }
 char out=0;
+obs= checkNeighbours(mapsub,xi);
  xnew=xi;
  if (unk==1){  out=-1;}
  	
  if (obs==1){  out=0;}
  		
- if (obs!=1 && unk!=1){   out=1;}
+ if (unk!=1 && free==1 && obs==0){   out=1;}
 
- 
+
  
  
  return out;

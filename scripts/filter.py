@@ -12,6 +12,7 @@ from numpy import array,vstack,delete
 from functions import gridValue,informationGain
 from sklearn.cluster import MeanShift
 from rrt_exploration.msg import PointArray
+import os
 
 # Subscribers' callbacks------------------------------
 mapData=OccupancyGrid()
@@ -46,7 +47,7 @@ def node():
 	rospy.init_node('filter', anonymous=False)
 	
 	# fetching all parameters
-	map_topic= rospy.get_param('~map_topic','/robot_1/map')
+	map_topic= rospy.get_param('~map_topic','/robot_0/map')
 	threshold= rospy.get_param('~costmap_clearing_threshold',70)
 	info_radius= rospy.get_param('~info_radius',1.0)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
 	goals_topic= rospy.get_param('~goals_topic','/detected_points')	
@@ -65,9 +66,10 @@ def node():
  		 globalmaps.append(OccupancyGrid()) 
  		 
  	for i in range(0,n_robots):
-		rospy.Subscriber('/robot_'+str(i+1)+'/move_base_node/global_costmap/costmap', OccupancyGrid, globalMap) 
-		
-#wait if map is not received yet
+		#rospy.Subscriber('/robot_'+str(i+1)+'/move_base_node/global_costmap/costmap', OccupancyGrid, globalMap)
+		rospy.Subscriber('/robot_'+str(i)+'/move_base/global_costmap/costmap', OccupancyGrid, globalMap)
+
+	#wait if map is not received yet
 	while (len(mapData.data)<1):
 		pass
 #wait if any of robots' global costmap map is not received yet
@@ -80,7 +82,7 @@ def node():
 
 	tfLisn=tf.TransformListener()
 	for i in range(0,n_robots):
-		tfLisn.waitForTransform(global_frame[1:], 'robot_'+str(i+1)+'/base_link', rospy.Time(0),rospy.Duration(10.0))
+		tfLisn.waitForTransform(global_frame[1:], 'robot_'+str(i)+'/base_link', rospy.Time(0),rospy.Duration(10.0))
 	
 	rospy.Subscriber(goals_topic, PointStamped, callback=callBack,callback_args=[tfLisn,global_frame[1:]])
 	pub = rospy.Publisher('frontiers', Marker, queue_size=10)
@@ -224,6 +226,7 @@ def node():
 if __name__ == '__main__':
     try:
         node()
+
     except rospy.ROSInterruptException:
         pass
  
