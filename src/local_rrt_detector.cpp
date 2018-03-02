@@ -75,8 +75,8 @@ int main(int argc, char **argv)
   ns=ros::this_node::getName();
 
   ros::param::param<float>(ns+"/eta", eta, 0.5);
-  ros::param::param<std::string>(ns+"/map_topic", map_topic, "/robot_1/map"); 
-  ros::param::param<std::string>(ns+"/robot_frame", base_frame_topic, "/robot_1/base_link"); 
+  ros::param::param<std::string>(ns+"/map_topic", map_topic, "/map"); 
+  ros::param::param<std::string>(ns+"/robot_frame", base_frame_topic, "/robot_0/base_link"); 
 //---------------------------------------------------------------
 ros::Subscriber sub= nh.subscribe(map_topic, 100 ,mapCallBack);	
 ros::Subscriber rviz_sub= nh.subscribe("/clicked_point", 100 ,rvizCallBack);	
@@ -89,7 +89,6 @@ ros::Rate rate(100);
  
 // wait until map is received, when a map is received, mapData.header.seq will not be < 1  
 while (mapData.header.seq<1 or mapData.data.size()<1)  {  ros::spinOnce();  ros::Duration(0.1).sleep();}
-
 
 
 //visualizations  points and lines..

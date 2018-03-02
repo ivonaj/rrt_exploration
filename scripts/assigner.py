@@ -39,12 +39,12 @@ def node():
 	rospy.init_node('assigner', anonymous=False)
 	
 	# fetching all parameters
-	map_topic= rospy.get_param('~map_topic','/robot_0/map')
+	map_topic= rospy.get_param('~map_topic','/map')
 	info_radius= rospy.get_param('~info_radius',1.0)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
 	info_multiplier=rospy.get_param('~info_multiplier',3.0)		
-	hysteresis_radius=rospy.get_param('~hysteresis_radius',3.0)			#at least as much as the laser scanner range
+	hysteresis_radius=rospy.get_param('~hysteresis_radius',15.0)			#at least as much as the laser scanner range
 	hysteresis_gain=rospy.get_param('~hysteresis_gain',2.0)				#bigger than 1 (biase robot to continue exploring current region
-	frontiers_topic= rospy.get_param('~frontiers_topic','/filtered_points')	
+	frontiers_topic= rospy.get_param('~frontiers_topic','/robot_0/filtered_points')
 	n_robots = rospy.get_param('~n_robots',1)
 	delay_after_assignement=rospy.get_param('~delay_after_assignement',0.5)
 	rateHz = rospy.get_param('~rate',100)
@@ -54,20 +54,24 @@ def node():
 	rospy.Subscriber(map_topic, OccupancyGrid, mapCallBack)
 	rospy.Subscriber(frontiers_topic, PointArray, callBack)
 #---------------------------------------------------------------------------------------------------------------
-		
+	rospy.loginfo("Assigner started")
+
 # wait if no frontier is received yet 
 	while len(frontiers)<1:
 		pass
-	centroids=copy(frontiers)	
+	centroids=copy(frontiers)
+
 #wait if map is not received yet
 	while (len(mapData.data)<1):
 		pass
-
 	robots=[]
+	rospy.loginfo("0")
 	for i in range(0,n_robots):
 		robots.append(robot('/robot_'+str(i)))
+	rospy.loginfo("1")
 	for i in range(0,n_robots):
 		robots[i].sendGoal(robots[i].getPosition())
+		rospy.loginfo("2")
 #-------------------------------------------------------------------------
 #---------------------     Main   Loop     -------------------------------
 #-------------------------------------------------------------------------
@@ -87,7 +91,9 @@ def node():
 				nb.append(i)
 			else:
 				na.append(i)	
-		rospy.loginfo("available robots: "+str(na))	
+		rospy.loginfo("available robots: "+str(na))
+		rospy.loginfo("busy robots: "+str(nb))
+
 #------------------------------------------------------------------------- 
 #get dicount and update informationGain
 		for i in nb+na:
