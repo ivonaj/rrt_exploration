@@ -49,7 +49,7 @@ def node():
 	# fetching all parameters
 	map_topic= rospy.get_param('~map_topic','/map')
 	threshold= rospy.get_param('~costmap_clearing_threshold',70)
-	info_radius= rospy.get_param('~info_radius',1.0)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
+	info_radius= rospy.get_param('~info_radius',10)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
 	goals_topic= rospy.get_param('~goals_topic','/detected_points')	
 	n_robots = rospy.get_param('~n_robots',1)
 	rateHz = rospy.get_param('~rate',100)
@@ -81,6 +81,7 @@ def node():
 
 
 	tfLisn=tf.TransformListener()
+	rospy.sleep(2)
 	for i in range(0,n_robots):
 		tfLisn.waitForTransform(global_frame[1:], 'robot_'+str(i)+'/base_link', rospy.Time(0),rospy.Duration(10.0))
 	
@@ -170,7 +171,7 @@ def node():
 		centroids=[]
 		front=copy(frontiers)
 		if len(front)>1:
-			ms = MeanShift(bandwidth=0.3)   
+			ms = MeanShift(bandwidth=2.0)
 			ms.fit(front)
 			centroids= ms.cluster_centers_	 #centroids array is the centers of each cluster		
 
@@ -186,10 +187,10 @@ def node():
 		# 	cond=False
 		# 	temppoint.point.x=centroids[z][0]
 		# 	temppoint.point.y=centroids[z][1]
-		#
+        #
 		# 	for i in range(0,n_robots):
-		#
-		#
+        #
+        #
 		# 		transformedPoint=tfLisn.transformPoint(globalmaps[i].header.frame_id,temppoint)
 		# 		x=array([transformedPoint.point.x,transformedPoint.point.y])
 		# 		cond=(gridValue(globalmaps[i],x)>threshold) or cond
@@ -220,7 +221,7 @@ def node():
 		points_clust.points=pp
 			
 		pub.publish(points)
-		pub2.publish(points_clust) 
+		pub2.publish(points_clust)
 		rate.sleep()
 #-------------------------------------------------------------------------
 
