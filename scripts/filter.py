@@ -48,8 +48,8 @@ def node():
 	
 	# fetching all parameters
 	map_topic= rospy.get_param('~map_topic','/map')
-	threshold= rospy.get_param('~costmap_clearing_threshold',70)
-	info_radius= rospy.get_param('~info_radius',10)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
+	threshold= rospy.get_param('~costmap_clearing_threshold',40)
+	info_radius= rospy.get_param('~info_radius',4)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
 	goals_topic= rospy.get_param('~goals_topic','/detected_points')	
 	n_robots = rospy.get_param('~n_robots',1)
 	rateHz = rospy.get_param('~rate',100)
@@ -57,7 +57,7 @@ def node():
 	rate = rospy.Rate(rateHz)
 #-------------------------------------------
 	rospy.Subscriber(map_topic, OccupancyGrid, mapCallBack)
-	
+	cnt=0
 
 #---------------------------------------------------------------------------------------------------------------
 	
@@ -171,42 +171,45 @@ def node():
 		centroids=[]
 		front=copy(frontiers)
 		if len(front)>1:
-			ms = MeanShift(bandwidth=2.0)
+			ms = MeanShift(bandwidth=0.6)
 			ms.fit(front)
 			centroids= ms.cluster_centers_	 #centroids array is the centers of each cluster		
 
 		#if there is only one frontier no need for clustering, i.e. centroids=frontiers
 		if len(front)==1:
 			centroids=front
+		print("resize frontiers from %d to %d"%(len(front),len(frontiers)))
 		frontiers=copy(centroids)
 #-------------------------------------------------------------------------	
 #clearing old frontiers  
-        #
-		# z=0
-		# while z<len(centroids):
-		# 	cond=False
-		# 	temppoint.point.x=centroids[z][0]
-		# 	temppoint.point.y=centroids[z][1]
-        #
-		# 	for i in range(0,n_robots):
-        #
-        #
-		# 		transformedPoint=tfLisn.transformPoint(globalmaps[i].header.frame_id,temppoint)
-		# 		x=array([transformedPoint.point.x,transformedPoint.point.y])
-		# 		cond=(gridValue(globalmaps[i],x)>threshold) or cond
-		# 	if (cond or (informationGain(mapData,[centroids[z][0],centroids[z][1]],info_radius*0.5))<0.2):
-		# 		centroids=delete(centroids, (z), axis=0)
-		# 		z=z-1
-		# 	z+=1
-#-------------------------------------------------------------------------
-#publishing
-		arraypoints.points=[]
+		print("clustered")
+		z=0
+		while z<len(centroids):
+			cond=False
+			temppoint.point.x=centroids[z][0]
+			temppoint.point.y=centroids[z][1]
 
+			for i in range(0,n_robots):
+				transformedPoint=tfLisn.transformPoint(globalmaps[i].header.frame_id,temppoint)
+				x=array([transformedPoint.point.x,transformedPoint.point.y])
+				cond=(gridValue(globalmaps[i],x)>threshold) or cond
+			if (cond or (informationGain(mapData,[centroids[z][0],centroids[z][1]],info_radius*0.5))<0.2):
+				centroids=delete(centroids, (z), axis=0)
+				print("delete centroid")
+				z=z-1
+			z+=1
+#-------------------------------------------------------------------------
+		#publishing
+
+		arraypoints.points=[]
+		cnt=0
 		for i in centroids:
 			tempPoint.x=i[0]
 			tempPoint.y=i[1]
 			arraypoints.points.append(copy(tempPoint))
+			cnt+=1
 		filterpub.publish(arraypoints)
+		print("Published centroids:"+str(cnt))
 		pp=[]	
 		for q in range(0,len(frontiers)):
 			p.x=frontiers[q][0]
@@ -222,6 +225,7 @@ def node():
 			
 		pub.publish(points)
 		pub2.publish(points_clust)
+
 		rate.sleep()
 #-------------------------------------------------------------------------
 
