@@ -48,8 +48,8 @@ def node():
 	
 	# fetching all parameters
 	map_topic= rospy.get_param('~map_topic','/map')
-	threshold= rospy.get_param('~costmap_clearing_threshold',40)
-	info_radius= rospy.get_param('~info_radius',4)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
+	threshold= rospy.get_param('~costmap_clearing_threshold',70)
+	info_radius= rospy.get_param('~info_radius',1)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
 	goals_topic= rospy.get_param('~goals_topic','/detected_points')	
 	n_robots = rospy.get_param('~n_robots',1)
 	rateHz = rospy.get_param('~rate',100)
@@ -171,14 +171,14 @@ def node():
 		centroids=[]
 		front=copy(frontiers)
 		if len(front)>1:
-			ms = MeanShift(bandwidth=0.6)
+			ms = MeanShift(bandwidth=0.4)
 			ms.fit(front)
 			centroids= ms.cluster_centers_	 #centroids array is the centers of each cluster		
 
 		#if there is only one frontier no need for clustering, i.e. centroids=frontiers
 		if len(front)==1:
 			centroids=front
-		print("resize frontiers from %d to %d"%(len(front),len(frontiers)))
+		print("resize frontiers from %d to %d"%(len(front),len(centroids)))
 		frontiers=copy(centroids)
 #-------------------------------------------------------------------------	
 #clearing old frontiers  
@@ -225,6 +225,24 @@ def node():
 			
 		pub.publish(points)
 		pub2.publish(points_clust)
+
+		# if len(frontiers)>15:
+		# 	ms = MeanShift(bandwidth=0.6).fit(frontiers)
+		# 	frontiers= ms.cluster_centers_
+		print("delete old frontiers")
+		z=0
+		while z<len(frontiers):
+
+			temppoint.point.x=frontiers[z][0]
+			temppoint.point.y=frontiers[z][1]
+
+			for i in range(0,n_robots):
+				transformedPoint=tfLisn.transformPoint(globalmaps[i].header.frame_id,temppoint)
+				x=array([transformedPoint.point.x,transformedPoint.point.y])
+			if ((informationGain(mapData,[frontiers[z][0],frontiers[z][1]],info_radius*0.5))<0.1):
+				frontiers=delete(frontiers, (z), axis=0)
+				z=z-1
+			z+=1
 
 		rate.sleep()
 #-------------------------------------------------------------------------
