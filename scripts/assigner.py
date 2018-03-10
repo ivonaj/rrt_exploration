@@ -41,8 +41,8 @@ def node():
 	# fetching all parameters
 	map_topic= rospy.get_param('~map_topic','/map')
 	info_radius= rospy.get_param('~info_radius',1.0)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
-	info_multiplier=rospy.get_param('~info_multiplier',3.0)		
-	hysteresis_radius=rospy.get_param('~hysteresis_radius',15.0)			#at least as much as the laser scanner range
+	info_multiplier=rospy.get_param('~info_multiplier',3.0)
+	hysteresis_radius=rospy.get_param('~hysteresis_radius',3.0)			#at least as much as the laser scanner range
 	hysteresis_gain=rospy.get_param('~hysteresis_gain',2.0)				#bigger than 1 (biase robot to continue exploring current region
 	frontiers_topic= rospy.get_param('~frontiers_topic','/robot_0/filtered_points')
 	n_robots = rospy.get_param('~n_robots',1)
@@ -56,7 +56,7 @@ def node():
 #---------------------------------------------------------------------------------------------------------------
 	rospy.loginfo("Assigner started")
 
-# wait if no frontier is received yet 
+# wait if no frontier is received yet
 	while len(frontiers)<1:
 		pass
 	centroids=copy(frontiers)
@@ -98,7 +98,8 @@ def node():
 #get dicount and update informationGain
 		for i in nb+na:
 			infoGain=discount(mapData,robots[i].assigned_point,centroids,infoGain,info_radius)
-#-------------------------------------------------------------------------            
+#-------------------------------------------------------------------------
+		print("infoGain calculated")
 		revenue_record=[]
 		centroid_record=[]
 		id_record=[]

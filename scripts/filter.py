@@ -48,7 +48,7 @@ def node():
 	
 	# fetching all parameters
 	map_topic= rospy.get_param('~map_topic','/map')
-	threshold= rospy.get_param('~costmap_clearing_threshold',70)
+	threshold= rospy.get_param('~costmap_clearing_threshold',50)
 	info_radius= rospy.get_param('~info_radius',1)					#this can be smaller than the laser scanner range, >> smaller >>less computation time>> too small is not good, info gain won't be accurate
 	goals_topic= rospy.get_param('~goals_topic','/detected_points')	
 	n_robots = rospy.get_param('~n_robots',1)
@@ -171,7 +171,7 @@ def node():
 		centroids=[]
 		front=copy(frontiers)
 		if len(front)>1:
-			ms = MeanShift(bandwidth=0.4)
+			ms = MeanShift(bandwidth=0.3)
 			ms.fit(front)
 			centroids= ms.cluster_centers_	 #centroids array is the centers of each cluster		
 
@@ -193,7 +193,7 @@ def node():
 				transformedPoint=tfLisn.transformPoint(globalmaps[i].header.frame_id,temppoint)
 				x=array([transformedPoint.point.x,transformedPoint.point.y])
 				cond=(gridValue(globalmaps[i],x)>threshold) or cond
-			if (cond or (informationGain(mapData,[centroids[z][0],centroids[z][1]],info_radius*0.5))<0.2):
+			if (cond or (informationGain(mapData,[centroids[z][0],centroids[z][1]],info_radius*0.5))<0.3):
 				centroids=delete(centroids, (z), axis=0)
 				print("delete centroid")
 				z=z-1
@@ -232,14 +232,15 @@ def node():
 		print("delete old frontiers")
 		z=0
 		while z<len(frontiers):
-
+			cond = False
 			temppoint.point.x=frontiers[z][0]
 			temppoint.point.y=frontiers[z][1]
 
 			for i in range(0,n_robots):
 				transformedPoint=tfLisn.transformPoint(globalmaps[i].header.frame_id,temppoint)
 				x=array([transformedPoint.point.x,transformedPoint.point.y])
-			if ((informationGain(mapData,[frontiers[z][0],frontiers[z][1]],info_radius*0.5))<0.1):
+				cond=(gridValue(globalmaps[i],x)>threshold) or cond
+			if (cond or (informationGain(mapData,[frontiers[z][0],frontiers[z][1]],info_radius*0.5))<0.05):
 				frontiers=delete(frontiers, (z), axis=0)
 				z=z-1
 			z+=1

@@ -19,11 +19,12 @@ class robot:
 		self.name=name
 		self.global_frame=rospy.get_param('~global_frame','/map')
 		self.listener=tf.TransformListener()
-		# rospy.sleep(2)
-		self.listener.waitForTransform(self.global_frame, name+'/base_link', rospy.Time(0),rospy.Duration(5.0))
+		rospy.sleep(2)
+		self.listener.waitForTransform(self.global_frame, name+'/base_link', rospy.Time(0),rospy.Duration(10.0))
 		cond=0;
 		while cond==0:
 			try:
+				self.listener.waitForTransform(self.global_frame, name+'/base_link', rospy.Time(0),rospy.Duration(10.0))
 				(trans,rot) = self.listener.lookupTransform(self.global_frame, self.name+'/base_link', rospy.Time(0))
 				cond=1
 			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
@@ -130,7 +131,7 @@ def pathCost(path):
 		i=len(path)/2
 		p1=array([path[i-1].pose.position.x,path[i-1].pose.position.y])
 		p2=array([path[i].pose.position.x,path[i].pose.position.y])
-		return 0.8*(norm(p1-p2)*(len(path)-1))
+		return (norm(p1-p2)*(len(path)-1))
 	else:
 		return inf
 #________________________________________________________________________________
@@ -172,7 +173,7 @@ def Nearest2(V,x):
 
 #
 
-#______________________________________________________________________________
+# ______________________________________________________________________________
 def gridValue(mapData,Xp):
  resolution=mapData.info.resolution
  Xstartx=mapData.info.origin.position.x
@@ -182,32 +183,37 @@ def gridValue(mapData,Xp):
  Data=mapData.data
  # returns grid value at "Xp" location
  #map data:  100 occupied      -1 unknown       0 free
- # index=(  floor((Xp[1]-Xstarty)/resolution)*width)+( floor((Xp[0]-Xstartx)/resolution) )
+ index=(  floor((Xp[1]-Xstarty)/resolution)*width)+( floor((Xp[0]-Xstartx)/resolution) )
  #
  #
 	#
 	#
- # if int(index) < len(Data):
- # 	return Data[int(index)]
- # else:
- # 	return 100
- xi=[-1,1,0,0,1,-1,1,-1,0]
- yi=[0,0,-1,1,-1,1,1,-1,0]
+ if int(index) < len(Data):
+ 	return Data[int(index)]
+ else:
+ 	return 100
 
- for i in range(len(xi)):
 
-	 dx=xi[i]
-	 dy=yi[i]
-	 pt=array([Xp[0]+dx,Xp[1]+dy])
-	 index=(  floor((pt[1]-Xstarty)/resolution)*width)+( floor((pt[0]-Xstartx)/resolution) )
-	 if (int(index) < len(Data) and int(index)>=0 ):
+ #added
+ # xi=[-1,1,0,0,1,-1,1,-1,0]
+ # yi=[0,0,-1,1,-1,1,1,-1,0]
+ #
+ # for i in range(len(xi)):
+ #
+	#  dx=xi[i]
+	#  dy=yi[i]
+	#  pt=array([Xp[0]+dx,Xp[1]+dy])
+	#  index=(  floor((pt[1]-Xstarty)/resolution)*width)+( floor((pt[0]-Xstartx)/resolution) )
+	#  if (int(index) < len(Data)):
+ #
+	# 	 if (Data[int(index)]>45):
+	# 		 return 100
+	#  	 elif (i==(len(xi)-1)):
+	# 		 return (Data[int(index)])
+	#  else:
+	# 	print("wtf")
+	# 	return 100
 
-		 if (Data[int(index)]>50):
-			 return 100
-	 	 elif (i==(len(xi)-1)):
-			 return (Data[int(index)])
-	 else:
-		return 100
 
  
 
