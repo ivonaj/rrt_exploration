@@ -193,7 +193,7 @@ def node():
 				transformedPoint=tfLisn.transformPoint(globalmaps[i].header.frame_id,temppoint)
 				x=array([transformedPoint.point.x,transformedPoint.point.y])
 				cond=(gridValue(globalmaps[i],x)>threshold) or cond
-			if (cond or (informationGain(mapData,[centroids[z][0],centroids[z][1]],info_radius*0.5))<0.3):
+			if (cond or (informationGain(mapData,[centroids[z][0],centroids[z][1]],info_radius*0.5))<0.25):
 				centroids=delete(centroids, (z), axis=0)
 				print("delete centroid")
 				z=z-1

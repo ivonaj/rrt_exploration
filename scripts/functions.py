@@ -183,36 +183,36 @@ def gridValue(mapData,Xp):
  Data=mapData.data
  # returns grid value at "Xp" location
  #map data:  100 occupied      -1 unknown       0 free
- index=(  floor((Xp[1]-Xstarty)/resolution)*width)+( floor((Xp[0]-Xstartx)/resolution) )
+ # index=(  floor((Xp[1]-Xstarty)/resolution)*width)+( floor((Xp[0]-Xstartx)/resolution) )
  #
  #
 	#
 	#
- if int(index) < len(Data):
- 	return Data[int(index)]
- else:
- 	return 100
+ # if int(index) < len(Data):
+ # 	return Data[int(index)]
+ # else:
+ # 	return 100
 
 
  #added
- # xi=[-1,1,0,0,1,-1,1,-1,0]
- # yi=[0,0,-1,1,-1,1,1,-1,0]
- #
- # for i in range(len(xi)):
- #
-	#  dx=xi[i]
-	#  dy=yi[i]
-	#  pt=array([Xp[0]+dx,Xp[1]+dy])
-	#  index=(  floor((pt[1]-Xstarty)/resolution)*width)+( floor((pt[0]-Xstartx)/resolution) )
-	#  if (int(index) < len(Data)):
- #
-	# 	 if (Data[int(index)]>45):
-	# 		 return 100
-	#  	 elif (i==(len(xi)-1)):
-	# 		 return (Data[int(index)])
-	#  else:
-	# 	print("wtf")
-	# 	return 100
+ xi=[-1,1,0,0,1,-1,1,-1,0]
+ yi=[0,0,-1,1,-1,1,1,-1,0]
+
+ for i in range(len(xi)):
+
+	 dx=xi[i]
+	 dy=yi[i]
+	 pt=array([Xp[0]+dx,Xp[1]+dy])
+	 index=(  floor((pt[1]-Xstarty)/resolution)*width)+( floor((pt[0]-Xstartx)/resolution) )
+	 if (int(index) < len(Data)):
+
+		 if (Data[int(index)]>50):
+			 return 100
+	 	 elif (i==(len(xi)-1)):
+			 return (Data[int(index)])
+	 else:
+		print("wtf")
+		return 100
 
 
  

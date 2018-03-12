@@ -127,12 +127,12 @@ for (int c=0;c<stepz;c++){
   		
 
    //if (gridValue(mapsub,xi) ==100){     obs=1; }
-    if (gridValue(mapsub,xi) >=20) {     obs=1; }
+    if (gridValue(mapsub,xi) >=40) {     obs=1; }
 
 
     if (gridValue(mapsub,xi) ==-1){      unk=1;	break;}
 
-    if (gridValue(mapsub,xi)<20) {free=1;
+    if (gridValue(mapsub,xi)<40) {free=1;
 
     }
 
