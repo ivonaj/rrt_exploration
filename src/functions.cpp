@@ -153,6 +153,17 @@ char out=0;
  
 
  }
+
+void Frontier2Tf(cartographer_ros_msgs::SubmapList SubmapList_,std::map<cartographer_ros_msgs::SubmapEntry,geometry_msgs::TransformStamped>& frontiersTF, geometry_msgs::PointStamped point) {
+    geometry_msgs::TransformStamped transf;
+    for (const auto &submap_msg : SubmapList_.submap) {
+        //        std::cout<<submap_msg.submap_index<<std::endl;
+        //find closest submap origin point to frontier
+        //calculate transformation
+        frontiersTF.insert(std::make_pair(submap_msg, transf));
+
+    }
+}
  
 
 

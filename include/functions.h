@@ -8,7 +8,9 @@
 #include "nav_msgs/OccupancyGrid.h"
 #include "geometry_msgs/Point.h"
 #include "visualization_msgs/Marker.h"
-
+#include "cartographer_ros_msgs/SubmapList.h"
+#include "geometry_msgs/TransformStamped.h"
+#include "geometry_msgs/PointStamped.h"
 // rdm class, for gentaring random flot numbers
 class rdm{
 int i;
@@ -37,4 +39,6 @@ char checkNeighbours(nav_msgs::OccupancyGrid &,std::vector<float>);
 
 //ObstacleFree function prototype
 char ObstacleFree(std::vector<float> , std::vector<float> & , nav_msgs::OccupancyGrid);
+void Frontier2Tf(cartographer_ros_msgs::SubmapList,std::map<cartographer_ros_msgs::SubmapEntry,geometry_msgs::TransformStamped>&,geometry_msgs::PointStamped);
+
 #endif
