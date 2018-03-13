@@ -16,6 +16,7 @@
 #include "geometry_msgs/Point.h"
 #include "visualization_msgs/Marker.h"
 #include <tf/transform_listener.h>
+#include "cartographer_ros_msgs/SubmapList.h"
 
 
 
@@ -26,10 +27,9 @@ geometry_msgs::PointStamped exploration_goal;
 visualization_msgs::Marker points,line;
 float xdim,ydim,resolution,Xstartx,Xstarty,init_map_x,init_map_y;
 
-rdm r; // for genrating random numbers
-
-
-
+rdm r; // for genrating random number
+cartographer_ros_msgs::SubmapList SubmapList_;
+std::map<cartographer_ros_msgs::SubmapEntry,geometry_msgs::TransformStamped> frontiersTF;
 //Subscribers callback functions---------------------------------------
 void mapCallBack(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 {
@@ -48,6 +48,12 @@ p.z=msg->point.z;
 
 points.points.push_back(p);
 
+}
+
+void submapCallBack(const cartographer_ros_msgs::SubmapList::ConstPtr& msg){
+    SubmapList_ = *msg;
+
+    }
 }
 
 
@@ -77,7 +83,8 @@ int main(int argc, char **argv)
   ros::param::param<std::string>("/map_topic", map_topic, "/map");
 //---------------------------------------------------------------
 ros::Subscriber sub= nh.subscribe(map_topic, 100 ,mapCallBack);	
-ros::Subscriber rviz_sub= nh.subscribe("/clicked_point", 100 ,rvizCallBack);	
+ros::Subscriber rviz_sub= nh.subscribe("/clicked_point", 100 ,rvizCallBack);
+ros::Subscriber submaplist_sub = nh.subscribe("/wanted_submaps",100,submapCallBack);
 
 ros::Publisher targetspub = nh.advertise<geometry_msgs::PointStamped>("/detected_points", 10);
 ros::Publisher pub = nh.advertise<visualization_msgs::Marker>(ns+"_shapes", 10);
@@ -87,7 +94,8 @@ ros::Rate rate(100);
  
 // wait until map is received, when a map is received, mapData.header.seq will not be < 1  
 while (mapData.header.seq<1 or mapData.data.size()<1)  {  ros::spinOnce();  ros::Duration(0.1).sleep();}
-//while (mapData.data.size()<1)  {  ros::spinOnce();  ros::Duration(0.1).sleep();}
+
+while (SubmapList_.submap.empty()){ros::spinOnce();  ros::Duration(0.1).sleep();}
 
 
 //visualizations  points and lines..
