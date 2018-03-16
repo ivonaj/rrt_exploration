@@ -129,13 +129,11 @@ for (int c=0;c<stepz;c++){
    //if (gridValue(mapsub,xi) ==100){     obs=1; }
     if (gridValue(mapsub,xi) >=40) {     obs=1; }
 
-
     if (gridValue(mapsub,xi) ==-1){      unk=1;	break;}
 
     if (gridValue(mapsub,xi)<40) {free=1;
 
     }
-
   }
 checkNeighbours(mapsub,xi,obs);
 char out=0;
@@ -146,24 +144,47 @@ char out=0;
  		
  if (unk!=1 && free==1 && obs!=1 ){   out=1;}
 
-
- 
- 
  return out;
- 
-
  }
 
-void Frontier2Tf(cartographer_ros_msgs::SubmapList SubmapList_,std::map<cartographer_ros_msgs::SubmapEntry,geometry_msgs::TransformStamped>& frontiersTF, geometry_msgs::PointStamped point) {
-    geometry_msgs::TransformStamped transf;
-    for (const auto &submap_msg : SubmapList_.submap) {
-        //        std::cout<<submap_msg.submap_index<<std::endl;
-        //find closest submap origin point to frontier
-        //calculate transformation
-        frontiersTF.insert(std::make_pair(submap_msg, transf));
-
+rrt_exploration::FrontierTF Point2Tf(cartographer_ros_msgs::SubmapList SubmapList_,std::vector<float> point) {
+    bool init=true;
+    float min_dist;
+    float dist;
+    cartographer_ros_msgs::SubmapEntry best_submap;
+    rrt_exploration::FrontierTF newTFPoint;
+    for (auto& submap_msg : SubmapList_.submap) {
+        std::vector<float> submap_point;
+        submap_point.push_back(submap_msg.pose.position.x);
+        submap_point.push_back(submap_msg.pose.position.y);
+        dist=Norm(submap_point,point);
+        if(init==true){
+            min_dist=dist;
+            best_submap=submap_msg;
+            init=false;
+        }
+        else {
+            if(min_dist>dist){
+            min_dist=dist;
+            best_submap=submap_msg;
+            }
+        }
     }
+    std::cout<<"najbliza submapa "<<best_submap.submap_index<<std::endl;
+    geometry_msgs::Transform tr;
+    geometry_msgs::Vector3 vec;
+//    transform.setOrigin( tf::Vector3((point[0]-best_submap.pose.position.x), (point[1]-best_submap.pose.position.y),0) );
+//    transform.setRotation( tf::Quaternion(0, 0, 0, 1) );
+    vec.x=point[0]-best_submap.pose.position.x;
+    vec.y=point[1]-best_submap.pose.position.y;
+    vec.z=0;
+    newTFPoint.submapIndex=best_submap.submap_index;
+    newTFPoint.transform=vec;
+
+    return newTFPoint;
+
 }
+
  
 
 

@@ -12,6 +12,7 @@ from numpy import array,vstack,delete
 from functions import gridValue,informationGain
 from sklearn.cluster import MeanShift
 from rrt_exploration.msg import PointArray
+from rrt_exploration.msg import FrontierTF
 import os
 
 # Subscribers' callbacks------------------------------
@@ -21,6 +22,9 @@ global1=OccupancyGrid()
 global2=OccupancyGrid()
 global3=OccupancyGrid()
 globalmaps=[]
+def callBackFrontier(data):
+	print(data.submapIndex)
+
 def callBack(data,args):
 	global frontiers,min_distance
 	transformedPoint=args[0].transformPoint(args[1],data)
@@ -57,6 +61,7 @@ def node():
 	rate = rospy.Rate(rateHz)
 #-------------------------------------------
 	rospy.Subscriber(map_topic, OccupancyGrid, mapCallBack)
+	rospy.Subscriber('transformed_points', FrontierTF, callBackFrontier)
 	cnt=0
 
 #---------------------------------------------------------------------------------------------------------------
@@ -229,7 +234,7 @@ def node():
 		# if len(frontiers)>15:
 		# 	ms = MeanShift(bandwidth=0.6).fit(frontiers)
 		# 	frontiers= ms.cluster_centers_
-		print("delete old frontiers")
+
 		z=0
 		while z<len(frontiers):
 			cond = False
@@ -242,6 +247,7 @@ def node():
 				cond=(gridValue(globalmaps[i],x)>threshold) or cond
 			if (cond or (informationGain(mapData,[frontiers[z][0],frontiers[z][1]],info_radius*0.5))<0.05):
 				frontiers=delete(frontiers, (z), axis=0)
+				print("delete old frontiers")
 				z=z-1
 			z+=1
 

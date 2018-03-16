@@ -17,8 +17,7 @@
 #include "visualization_msgs/Marker.h"
 #include <tf/transform_listener.h>
 #include "cartographer_ros_msgs/SubmapList.h"
-
-
+#include "rrt_exploration/FrontierTF.h"
 
 // global variables
 nav_msgs::OccupancyGrid mapData;
@@ -26,10 +25,9 @@ geometry_msgs::PointStamped clickedpoint;
 geometry_msgs::PointStamped exploration_goal;
 visualization_msgs::Marker points,line;
 float xdim,ydim,resolution,Xstartx,Xstarty,init_map_x,init_map_y;
-
 rdm r; // for genrating random number
 cartographer_ros_msgs::SubmapList SubmapList_;
-std::map<cartographer_ros_msgs::SubmapEntry,geometry_msgs::TransformStamped> frontiersTF;
+rrt_exploration::FrontierTF frontiersTF;
 //Subscribers callback functions---------------------------------------
 void mapCallBack(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 {
@@ -52,11 +50,7 @@ points.points.push_back(p);
 
 void submapCallBack(const cartographer_ros_msgs::SubmapList::ConstPtr& msg){
     SubmapList_ = *msg;
-
     }
-}
-
-
 
 
 int main(int argc, char **argv)
@@ -88,6 +82,7 @@ ros::Subscriber submaplist_sub = nh.subscribe("/wanted_submaps",100,submapCallBa
 
 ros::Publisher targetspub = nh.advertise<geometry_msgs::PointStamped>("/detected_points", 10);
 ros::Publisher pub = nh.advertise<visualization_msgs::Marker>(ns+"_shapes", 10);
+ros::Publisher frontier_tf_pub=nh.advertise<rrt_exploration::FrontierTF>("/transformed_points",10);
 
 ros::Rate rate(100); 
  
@@ -170,10 +165,6 @@ temp1.clear();		temp2.clear();
 Xstartx=(points.points[0].x+points.points[2].x)*.5;
 Xstarty=(points.points[0].y+points.points[2].y)*.5;
 
-
-
-
-
 geometry_msgs::Point trans;
 trans=points.points[4];
 std::vector< std::vector<float>  > V; 
@@ -183,11 +174,6 @@ V.push_back(xnew);
 
 points.points.clear();
 pub.publish(points) ;
-
-
-
-
-
 
 
 std::vector<float> frontiers;
@@ -221,7 +207,9 @@ x_new=Steer(x_nearest,x_rand,eta);
 char   checking=ObstacleFree(x_nearest,x_new,mapData);
 
 	  if (checking==-1){
-          	exploration_goal.header.stamp=ros::Time(0);
+		  	frontiersTF = Point2Tf(SubmapList_,x_new);
+
+            exploration_goal.header.stamp=ros::Time(0);
           	exploration_goal.header.frame_id=mapData.header.frame_id;
           	exploration_goal.point.x=x_new[0];
           	exploration_goal.point.y=x_new[1];
@@ -232,6 +220,7 @@ char   checking=ObstacleFree(x_nearest,x_new,mapData);
           	points.points.push_back(p);
           	pub.publish(points) ;
           	targetspub.publish(exploration_goal);
+            frontier_tf_pub.publish(frontiersTF);
 		  	points.points.clear();
         	
         	}
@@ -255,8 +244,6 @@ char   checking=ObstacleFree(x_nearest,x_new,mapData);
 
 pub.publish(line);  
 
-
-   
 
 ros::spinOnce();
 rate.sleep();
