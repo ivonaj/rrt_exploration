@@ -1,6 +1,7 @@
 #include "functions.h"
 
 
+
 // rdm class, for gentaring random flot numbers
 rdm::rdm() {i=time(0);}
 float rdm::randomize() { i=i+1;  srand (i);  return float(rand())/float(RAND_MAX);}
@@ -23,7 +24,7 @@ else{return 1.0;}
 
 
 //Nearest function
-std::vector<float> Nearest(  std::vector< std::vector<float>  > V, std::vector<float>  x){
+std::tuple<std::vector<float>,int> Nearest(  std::vector< std::vector<float>  > V, std::vector<float>  x){
 
 float min=Norm(V[0],x);
 int min_index;
@@ -38,7 +39,7 @@ min_index=j;}
 
 }
 
-return V[min_index];
+return std::make_tuple(V[min_index],min_index) ;
 }
 
 
@@ -170,7 +171,7 @@ rrt_exploration::FrontierTF Point2Tf(cartographer_ros_msgs::SubmapList SubmapLis
             }
         }
     }
-    std::cout<<"najbliza submapa "<<best_submap.submap_index<<std::endl;
+    std::cout<<"Robotu "<<best_submap.trajectory_id<<" najbliza submapa "<<best_submap.submap_index<<std::endl;
     geometry_msgs::Transform tr;
     geometry_msgs::Vector3 vec;
 //    transform.setOrigin( tf::Vector3((point[0]-best_submap.pose.position.x), (point[1]-best_submap.pose.position.y),0) );
@@ -178,10 +179,47 @@ rrt_exploration::FrontierTF Point2Tf(cartographer_ros_msgs::SubmapList SubmapLis
     vec.x=point[0]-best_submap.pose.position.x;
     vec.y=point[1]-best_submap.pose.position.y;
     vec.z=0;
+    newTFPoint.trajectory_id=best_submap.trajectory_id;
     newTFPoint.submapIndex=best_submap.submap_index;
     newTFPoint.transform=vec;
 
     return newTFPoint;
+
+}
+std::vector< std::vector<float>> refreshTree(cartographer_ros_msgs::SubmapList SubmapList_,std::vector<rrt_exploration::FrontierTF> pointsTF){
+    std::vector< std::vector<float>> RRT;
+    for(auto point:pointsTF){
+        for (auto& submap_msg : SubmapList_.submap) {
+            if((submap_msg.trajectory_id==point.trajectory_id) && (submap_msg.submap_index==point.submapIndex)){
+                std::vector<float> TFpoint;
+                TFpoint.push_back(point.transform.x+submap_msg.pose.position.x);
+                TFpoint.push_back(point.transform.y+submap_msg.pose.position.y);
+                RRT.push_back(TFpoint);
+                break;
+            }
+        }
+    }
+    return RRT;
+}
+void DrawRRT(visualization_msgs::Marker& line,std::vector<std::tuple<int,int>>indexes,std::vector< std::vector<float>> points){
+    line.points.clear();
+    int one,two;
+    geometry_msgs::Point p;
+    std::vector<float> point;
+    for (auto ind:indexes){
+        std::tie(one,two)=ind;
+        point=points.at(one);
+        p.x=point[0];
+        p.y=point[1];
+        p.z=0.0;
+        line.points.push_back(p);
+        point=points.at(two);
+        p.x=point[0];
+        p.y=point[1];
+        p.z=0.0;
+        line.points.push_back(p);
+
+    }
 
 }
 

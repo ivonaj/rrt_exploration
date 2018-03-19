@@ -8,7 +8,6 @@
 #include "functions.h"
 #include "mtrand.h"
 
-
 #include "nav_msgs/OccupancyGrid.h"
 #include "geometry_msgs/PointStamped.h"
 #include "std_msgs/Header.h"
@@ -28,6 +27,9 @@ float xdim,ydim,resolution,Xstartx,Xstarty,init_map_x,init_map_y;
 rdm r; // for genrating random number
 cartographer_ros_msgs::SubmapList SubmapList_;
 rrt_exploration::FrontierTF frontiersTF;
+std::vector<std::tuple<int,int>> index_vec;
+std::vector<rrt_exploration::FrontierTF> pointsTF;
+
 //Subscribers callback functions---------------------------------------
 void mapCallBack(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 {
@@ -69,7 +71,6 @@ int main(int argc, char **argv)
   // fetching all parameters
   float eta,init_map_x,init_map_y,range;
   std::string map_topic,base_frame_topic;
-  
   std::string ns;
   ns=ros::this_node::getName();
 
@@ -78,7 +79,7 @@ int main(int argc, char **argv)
 //---------------------------------------------------------------
 ros::Subscriber sub= nh.subscribe(map_topic, 100 ,mapCallBack);	
 ros::Subscriber rviz_sub= nh.subscribe("/clicked_point", 100 ,rvizCallBack);
-ros::Subscriber submaplist_sub = nh.subscribe("/wanted_submaps",100,submapCallBack);
+ros::Subscriber submaplist_sub = nh.subscribe("/used_submaps",100,submapCallBack);
 
 ros::Publisher targetspub = nh.advertise<geometry_msgs::PointStamped>("/detected_points", 10);
 ros::Publisher pub = nh.advertise<visualization_msgs::Marker>(ns+"_shapes", 10);
@@ -167,11 +168,10 @@ Xstarty=(points.points[0].y+points.points[2].y)*.5;
 
 geometry_msgs::Point trans;
 trans=points.points[4];
-std::vector< std::vector<float>  > V; 
-std::vector<float> xnew; 
-xnew.push_back( trans.x);xnew.push_back( trans.y);  
-V.push_back(xnew);
-
+std::vector< std::vector<float>  > V;
+std::vector<float> xnew;
+xnew.push_back( trans.x);xnew.push_back( trans.y);
+pointsTF.push_back(Point2Tf(SubmapList_,xnew));
 points.points.clear();
 pub.publish(points) ;
 
@@ -184,8 +184,8 @@ std::vector<float> x_rand,x_nearest,x_new;
 
 // Main loop
 while (ros::ok()){
-
-
+V.clear();
+V=refreshTree(SubmapList_,pointsTF);
 // Sample free
 x_rand.clear();
 xr=(drand()*init_map_x)-(init_map_x*0.5)+Xstartx;
@@ -196,7 +196,8 @@ x_rand.push_back( xr ); x_rand.push_back( yr );
 
 
 // Nearest
-x_nearest=Nearest(V,x_rand);
+int min_index;
+tie(x_nearest,min_index)=Nearest(V,x_rand);
 
 // Steer
 
@@ -228,20 +229,14 @@ char   checking=ObstacleFree(x_nearest,x_new,mapData);
 	  
 	  else if (checking==1){
 	 	V.push_back(x_new);
-	 	
-	 	p.x=x_new[0]; 
-		p.y=x_new[1]; 
-		p.z=0.0;
-	 	line.points.push_back(p);
-	 	p.x=x_nearest[0]; 
-		p.y=x_nearest[1]; 
-		p.z=0.0;
-	 	line.points.push_back(p);
-
+	 	pointsTF.push_back(Point2Tf(SubmapList_,x_new));
+        index_vec.push_back(std::make_tuple(min_index,pointsTF.size()-1));
 	        }
 
+line.points.clear();
+pub.publish(line);
 
-
+DrawRRT(line,index_vec,V);
 pub.publish(line);  
 
 
