@@ -24,25 +24,84 @@ else{return 1.0;}
 
 
 //Nearest function
+//Nearest function
 std::tuple<std::vector<float>,int> Nearest(  std::vector< std::vector<float>  > V, std::vector<float>  x){
 
-float min=Norm(V[0],x);
-int min_index;
-float temp;
+    float min=Norm(V[0],x);
+    int min_index;
+    float temp;
 
-for (int j=0;j<V.size();j++)
-{
-temp=Norm(V[j],x);
-if (temp<=min){
-min=temp;
-min_index=j;}
+    for (int j=0;j<V.size();j++)
+    {
+        temp=Norm(V[j],x);
+        if (temp<=min){
+            min=temp;
+            min_index=j;}
+
+    }
+
+    return std::make_tuple(V[min_index],min_index) ;
+}
+std::tuple<std::vector<float>,int> NearestSameId(int& init_id,std::vector<rrt_exploration::FrontierTF>& pointsTF,rrt_exploration::FrontierTF point,cartographer_ros_msgs::SubmapList SubmapList_){
+    int i=0;
+    float min = std::numeric_limits<float>::max();;
+    int min_index;
+    float temp;
+    std::vector<float> best;
+    std::vector<float> XYpoint1,XYpoint2;
+
+    XYpoint1=TF2XY(SubmapList_,point);
+    for (auto& TFpoint : pointsTF) {
+        if(TFpoint.trajectory_id==point.trajectory_id){
+            XYpoint2=TF2XY(SubmapList_,TFpoint);
+            temp=Norm(XYpoint1,XYpoint2);
+            if (temp<=min){
+                min=temp;
+                std::cout<<min<<std::endl;
+                min_index=i;
+                best=XYpoint2;
+            }
+            init_id=1;
+        }
+        i++;
+    }
+    if (init_id==0){
+        rrt_exploration::FrontierTF added;
+        for (auto& submap_msg : SubmapList_.submap) {
+            if (submap_msg.trajectory_id==point.trajectory_id){
+                added.trajectory_id=submap_msg.trajectory_id;
+                added.submapIndex=submap_msg.submap_index;
+                geometry_msgs::Vector3 vec;
+                vec.x=0;
+                vec.y=0;
+                vec.z=0;
+                added.transform=vec;
+                break;
+            }
+        }
+
+        pointsTF.push_back(added);
+        std::cout<<"dodaj"<<std::endl;
+        //return dummy values
+        min_index=i;
+        best=XYpoint2;
+
+    }
+    return std::make_tuple(best,min_index) ;
 
 }
 
-return std::make_tuple(V[min_index],min_index) ;
+std::vector<float> TF2XY(cartographer_ros_msgs::SubmapList SubmapList_,rrt_exploration::FrontierTF pointTF){
+    std::vector<float> PointXY;
+    for (auto& submap_msg : SubmapList_.submap) {
+        if((submap_msg.trajectory_id==pointTF.trajectory_id) && (submap_msg.submap_index==pointTF.submapIndex)){
+            PointXY.push_back(pointTF.transform.x+submap_msg.pose.position.x);
+            PointXY.push_back(pointTF.transform.y+submap_msg.pose.position.y);
+            break;
+        }
+    }
+    return PointXY;
 }
-
-
 
 //Steer function
 std::vector<float> Steer(  std::vector<float> x_nearest , std::vector<float> x_rand, float eta){
@@ -85,7 +144,12 @@ std::vector<signed char> Data=mapData.data;
 //map data:  100 occupied      -1 unknown       0 free
 float indx=(  floor((Xp[1]-Xstarty)/resolution)*width)+( floor((Xp[0]-Xstartx)/resolution) );
 int out;
+std::cout<<"Dobio "<<Xp[0]<<" "<<Xp[1]<<std::endl;
+
+std::cout<<"Ne volim index "<<indx<<std::endl;
+
 out=Data[int(indx)];
+std::cout<<"GridValue output "<<out<<std::endl;
 return out;
 }
 
@@ -108,8 +172,7 @@ void checkNeighbours(nav_msgs::OccupancyGrid &mapData,std::vector<float> Xp, cha
 
     for (int i=-1;i<=1;i++){
         for(int j=-1;j<=1;j++){
-            //neigbours.push_back(getIndex(cell_x+i,cell_y+j));
-            if (Data[int(getCellIndex(cell_x+i,cell_y+j,width))]>40) obs = 1;
+            if (Data[int(getCellIndex(cell_x+i,cell_y+j,width))]>50) obs = 1;
         }
     }
 }
@@ -121,22 +184,27 @@ float rez=float(mapsub.info.resolution)*.2;
 float stepz=int(ceil(Norm(xnew,xnear))/rez); 
 std::vector<float> xi=xnear;
 char  obs=0; char unk=0; char free=0;
- 
+std::cout<<"enter ObstacelFree"<<std::endl;
+
 geometry_msgs::Point p;
 for (int c=0;c<stepz;c++){
   xi=Steer(xi,xnew,rez);
-  		
 
-   //if (gridValue(mapsub,xi) ==100){     obs=1; }
-    if (gridValue(mapsub,xi) >=40) {     obs=1; }
+    std::cout<<"check grid value"<<std::endl;
+
+    if (gridValue(mapsub,xi) >=50) {     obs=1; }
 
     if (gridValue(mapsub,xi) ==-1){      unk=1;	break;}
 
-    if (gridValue(mapsub,xi)<40) {free=1;
+    if (gridValue(mapsub,xi)<50) {free=1;
 
     }
+    std::cout<<"pass grid val check"<<std::endl;
+
   }
-checkNeighbours(mapsub,xi,obs);
+    std::cout<<"calc out"<<std::endl;
+
+//checkNeighbours(mapsub,xi,obs);
 char out=0;
  xnew=xi;
  if (unk==1){  out=-1;}
@@ -172,10 +240,7 @@ rrt_exploration::FrontierTF Point2Tf(cartographer_ros_msgs::SubmapList SubmapLis
         }
     }
     std::cout<<"Robotu "<<best_submap.trajectory_id<<" najbliza submapa "<<best_submap.submap_index<<std::endl;
-    geometry_msgs::Transform tr;
     geometry_msgs::Vector3 vec;
-//    transform.setOrigin( tf::Vector3((point[0]-best_submap.pose.position.x), (point[1]-best_submap.pose.position.y),0) );
-//    transform.setRotation( tf::Quaternion(0, 0, 0, 1) );
     vec.x=point[0]-best_submap.pose.position.x;
     vec.y=point[1]-best_submap.pose.position.y;
     vec.z=0;
@@ -218,9 +283,7 @@ void DrawRRT(visualization_msgs::Marker& line,std::vector<std::tuple<int,int>>in
         p.y=point[1];
         p.z=0.0;
         line.points.push_back(p);
-
     }
-
 }
 
  

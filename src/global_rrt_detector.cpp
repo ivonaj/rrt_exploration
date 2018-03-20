@@ -138,10 +138,6 @@ ros::spinOnce();
 
 pub.publish(points) ;
 }
-
-
-
-
 std::vector<float> temp1;
 temp1.push_back(points.points[0].x);
 temp1.push_back(points.points[0].y);
@@ -184,62 +180,64 @@ std::vector<float> x_rand,x_nearest,x_new;
 
 // Main loop
 while (ros::ok()){
-V.clear();
-V=refreshTree(SubmapList_,pointsTF);
-// Sample free
-x_rand.clear();
-xr=(drand()*init_map_x)-(init_map_x*0.5)+Xstartx;
-yr=(drand()*init_map_y)-(init_map_y*0.5)+Xstarty;
+    // Sample free
+    int init_id=0;
+    int min_index;
 
+    x_rand.clear();
+    xr=(drand()*init_map_x)-(init_map_x*0.5)+Xstartx;
+    yr=(drand()*init_map_y)-(init_map_y*0.5)+Xstarty;
 
-x_rand.push_back( xr ); x_rand.push_back( yr );
+    x_rand.push_back( xr ); x_rand.push_back( yr );
+    // Nearest
 
+    //tie(x_nearest,min_index)=Nearest(V,x_rand);
+    auto point = Point2Tf(SubmapList_,x_rand);
+    tie(x_nearest, min_index) = NearestSameId(init_id,pointsTF, point,SubmapList_);
+    if (init_id==0){
+        ros::Duration(0.1).sleep();
+        ros::spinOnce();
+        rate.sleep();
+        continue;
+    }
+    // Steer
+    x_new=Steer(x_nearest,x_rand,eta);
+    V.clear();
+    V=refreshTree(SubmapList_,pointsTF);
+    // ObstacleFree    1:free     -1:unkown (frontier region)      0:obstacle
+    char   checking=ObstacleFree(x_nearest,x_new,mapData);
 
-// Nearest
-int min_index;
-tie(x_nearest,min_index)=Nearest(V,x_rand);
+          if (checking==-1){
+                frontiersTF = Point2Tf(SubmapList_,x_new);
+                exploration_goal.header.stamp=ros::Time(0);
+                exploration_goal.header.frame_id=mapData.header.frame_id;
+                exploration_goal.point.x=x_new[0];
+                exploration_goal.point.y=x_new[1];
+                exploration_goal.point.z=0.0;
+                p.x=x_new[0];
+                p.y=x_new[1];
+                p.z=0.0;
+                points.points.push_back(p);
+                pub.publish(points) ;
+                targetspub.publish(exploration_goal);
+                frontier_tf_pub.publish(frontiersTF);
+                points.points.clear();
+          }
 
-// Steer
+          else if (checking==1){
+            V.push_back(x_new);
+            pointsTF.push_back(Point2Tf(SubmapList_,x_new));
+            index_vec.push_back(std::make_tuple(min_index,pointsTF.size()-1));
+          }
 
-x_new=Steer(x_nearest,x_rand,eta);
+    line.points.clear();
+    pub.publish(line);
 
+    DrawRRT(line,index_vec,V);
+    pub.publish(line);
 
-// ObstacleFree    1:free     -1:unkown (frontier region)      0:obstacle
-char   checking=ObstacleFree(x_nearest,x_new,mapData);
-
-	  if (checking==-1){
-		  	frontiersTF = Point2Tf(SubmapList_,x_new);
-
-            exploration_goal.header.stamp=ros::Time(0);
-          	exploration_goal.header.frame_id=mapData.header.frame_id;
-          	exploration_goal.point.x=x_new[0];
-          	exploration_goal.point.y=x_new[1];
-          	exploration_goal.point.z=0.0;
-          	p.x=x_new[0]; 
-			p.y=x_new[1]; 
-			p.z=0.0;
-          	points.points.push_back(p);
-          	pub.publish(points) ;
-          	targetspub.publish(exploration_goal);
-            frontier_tf_pub.publish(frontiersTF);
-		  	points.points.clear();
-        	
-        	}
-	  	
-	  
-	  else if (checking==1){
-	 	V.push_back(x_new);
-	 	pointsTF.push_back(Point2Tf(SubmapList_,x_new));
-        index_vec.push_back(std::make_tuple(min_index,pointsTF.size()-1));
-	        }
-
-line.points.clear();
-pub.publish(line);
-
-DrawRRT(line,index_vec,V);
-pub.publish(line);  
-
-
-ros::spinOnce();
-rate.sleep();
-  }return 0;}
+    ros::spinOnce();
+    rate.sleep();
+  }
+    return 0;
+}

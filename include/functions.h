@@ -15,6 +15,7 @@
 #include <tf/tf.h>
 #include"rrt_exploration/FrontierTF.h"
 #include <tuple>
+#include "cartographer/transform/rigid_transform.h"
 // rdm class, for gentaring random flot numbers
 class rdm{
 int i;
@@ -31,7 +32,9 @@ float sign(float );
 
 //Nearest function prototype
 std::tuple<std::vector<float>, int> Nearest(  std::vector< std::vector<float>  > , std::vector<float> );
+std::tuple<std::vector<float>,int> NearestSameId(int&,std::vector<rrt_exploration::FrontierTF>&,rrt_exploration::FrontierTF,cartographer_ros_msgs::SubmapList);
 
+std::vector<float> TF2XY(cartographer_ros_msgs::SubmapList,rrt_exploration::FrontierTF);
 //Steer function prototype
 std::vector<float> Steer(  std::vector<float>, std::vector<float>, float );
 
