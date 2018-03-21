@@ -1,6 +1,6 @@
 #include "functions.h"
 
-
+using Rigid3d=cartographer::transform::Rigid3d;
 
 // rdm class, for gentaring random flot numbers
 rdm::rdm() {i=time(0);}
@@ -240,16 +240,16 @@ rrt_exploration::FrontierTF Point2Tf(cartographer_ros_msgs::SubmapList SubmapLis
         }
     }
     std::cout<<"Robotu "<<best_submap.trajectory_id<<" najbliza submapa "<<best_submap.submap_index<<std::endl;
-    cartographer::transform::Rigid3d rigidTransf;
-    rigidTransf=cartographer_ros::ToRigid3d(best_submap.pose);
-    geometry_msgs::Transform transf=cartographer_ros::ToGeometryMsgTransform(rigidTransf);
-    tf::Transform tfTransf;
-    tf::transformMsgToTF(transf,tfTransf);
-    tf::Vector3 end_vec(point[0],point[1],0.0);
-    end_vec=tfTransf.inverse()*end_vec;
+    const Rigid3d rigidTransf=cartographer_ros::ToRigid3d(best_submap.pose);
+    const Rigid3d TFpoint=rigidTransf.inverse()*Rigid3d::Translation(
+            Rigid3d::Vector(point[0],point[1],0.0));
     newTFPoint.trajectory_id=best_submap.trajectory_id;
     newTFPoint.submapIndex=best_submap.submap_index;
-    tf::vector3TFToMsg(end_vec,newTFPoint.transform);
+    newTFPoint.transform.x=cartographer_ros::ToGeometryMsgPose(TFpoint).position.x;
+    newTFPoint.transform.y=cartographer_ros::ToGeometryMsgPose(TFpoint).position.y;
+    newTFPoint.transform.z=0.0;
+
+
     return newTFPoint;
 
 }
@@ -258,21 +258,12 @@ std::vector< std::vector<float>> refreshTree(cartographer_ros_msgs::SubmapList S
     for(auto point:pointsTF){
         for (auto& submap_msg : SubmapList_.submap) {
             if((submap_msg.trajectory_id==point.trajectory_id) && (submap_msg.submap_index==point.submapIndex)){
-                std::vector<float> TFpoint;
+                const Rigid3d rigidTransf=cartographer_ros::ToRigid3d(submap_msg.pose);
+                const Rigid3d TFpoint=rigidTransf*Rigid3d::Translation(
+                        Rigid3d::Vector(point.transform.x,point.transform.y,point.transform.z));
 
-                cartographer::transform::Rigid3d rigidTransf;
-                rigidTransf=cartographer_ros::ToRigid3d(submap_msg.pose);
-                geometry_msgs::Transform transf=cartographer_ros::ToGeometryMsgTransform(rigidTransf);
-                tf::Transform tfTransf;
-                tf::transformMsgToTF(transf,tfTransf);
-                tf::Vector3 vec(point.transform.x,point.transform.y,point.transform.z);
-
-                vec=tfTransf*vec;
-                TFpoint.push_back(vec.getX());
-                TFpoint.push_back(vec.getY());
-
-
-                RRT.push_back(TFpoint);
+                RRT.push_back({TFpoint.translation().x(),
+                               TFpoint.translation().y()});
                 break;
             }
         }
