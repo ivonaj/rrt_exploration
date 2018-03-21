@@ -240,14 +240,16 @@ rrt_exploration::FrontierTF Point2Tf(cartographer_ros_msgs::SubmapList SubmapLis
         }
     }
     std::cout<<"Robotu "<<best_submap.trajectory_id<<" najbliza submapa "<<best_submap.submap_index<<std::endl;
-    geometry_msgs::Vector3 vec;
-    vec.x=point[0]-best_submap.pose.position.x;
-    vec.y=point[1]-best_submap.pose.position.y;
-    vec.z=0;
+    cartographer::transform::Rigid3d rigidTransf;
+    rigidTransf=cartographer_ros::ToRigid3d(best_submap.pose);
+    geometry_msgs::Transform transf=cartographer_ros::ToGeometryMsgTransform(rigidTransf);
+    tf::Transform tfTransf;
+    tf::transformMsgToTF(transf,tfTransf);
+    tf::Vector3 end_vec(point[0],point[1],0.0);
+    end_vec=tfTransf.inverse()*end_vec;
     newTFPoint.trajectory_id=best_submap.trajectory_id;
     newTFPoint.submapIndex=best_submap.submap_index;
-    newTFPoint.transform=vec;
-
+    tf::vector3TFToMsg(end_vec,newTFPoint.transform);
     return newTFPoint;
 
 }
@@ -257,8 +259,19 @@ std::vector< std::vector<float>> refreshTree(cartographer_ros_msgs::SubmapList S
         for (auto& submap_msg : SubmapList_.submap) {
             if((submap_msg.trajectory_id==point.trajectory_id) && (submap_msg.submap_index==point.submapIndex)){
                 std::vector<float> TFpoint;
-                TFpoint.push_back(point.transform.x+submap_msg.pose.position.x);
-                TFpoint.push_back(point.transform.y+submap_msg.pose.position.y);
+
+                cartographer::transform::Rigid3d rigidTransf;
+                rigidTransf=cartographer_ros::ToRigid3d(submap_msg.pose);
+                geometry_msgs::Transform transf=cartographer_ros::ToGeometryMsgTransform(rigidTransf);
+                tf::Transform tfTransf;
+                tf::transformMsgToTF(transf,tfTransf);
+                tf::Vector3 vec(point.transform.x,point.transform.y,point.transform.z);
+
+                vec=tfTransf*vec;
+                TFpoint.push_back(vec.getX());
+                TFpoint.push_back(vec.getY());
+
+
                 RRT.push_back(TFpoint);
                 break;
             }

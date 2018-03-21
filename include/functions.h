@@ -16,6 +16,7 @@
 #include"rrt_exploration/FrontierTF.h"
 #include <tuple>
 #include "cartographer/transform/rigid_transform.h"
+#include "cartographer_ros/msg_conversion.h"
 // rdm class, for gentaring random flot numbers
 class rdm{
 int i;

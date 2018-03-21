@@ -167,6 +167,7 @@ trans=points.points[4];
 std::vector< std::vector<float>  > V;
 std::vector<float> xnew;
 xnew.push_back( trans.x);xnew.push_back( trans.y);
+V.push_back(xnew);
 pointsTF.push_back(Point2Tf(SubmapList_,xnew));
 points.points.clear();
 pub.publish(points) ;
@@ -191,15 +192,15 @@ while (ros::ok()){
     x_rand.push_back( xr ); x_rand.push_back( yr );
     // Nearest
 
-    //tie(x_nearest,min_index)=Nearest(V,x_rand);
-    auto point = Point2Tf(SubmapList_,x_rand);
-    tie(x_nearest, min_index) = NearestSameId(init_id,pointsTF, point,SubmapList_);
-    if (init_id==0){
-        ros::Duration(0.1).sleep();
-        ros::spinOnce();
-        rate.sleep();
-        continue;
-    }
+    tie(x_nearest,min_index)=Nearest(V,x_rand);
+//    auto point = Point2Tf(SubmapList_,x_rand);
+//    tie(x_nearest, min_index) = NearestSameId(init_id,pointsTF, point,SubmapList_);
+//    if (init_id==0){
+//        ros::Duration(0.1).sleep();
+//        ros::spinOnce();
+//        rate.sleep();
+//        continue;
+//    }
     // Steer
     x_new=Steer(x_nearest,x_rand,eta);
     V.clear();
