@@ -129,41 +129,8 @@ line.color.a = 1.0;
 points.lifetime = ros::Duration();
 line.lifetime = ros::Duration();
 
-geometry_msgs::Point p;  
-
-
-while(points.points.size()<5)
-{
-ros::spinOnce();
-
-pub.publish(points) ;
-}
-std::vector<float> temp1;
-temp1.push_back(points.points[0].x);
-temp1.push_back(points.points[0].y);
-	
-std::vector<float> temp2; 
-temp2.push_back(points.points[2].x);
-temp2.push_back(points.points[0].y);
-
-
-init_map_x=Norm(temp1,temp2);
-temp1.clear();		temp2.clear();
-
-temp1.push_back(points.points[0].x);
-temp1.push_back(points.points[0].y);
-
-temp2.push_back(points.points[0].x);
-temp2.push_back(points.points[2].y);
-
-init_map_y=Norm(temp1,temp2);
-temp1.clear();		temp2.clear();
-
-Xstartx=(points.points[0].x+points.points[2].x)*.5;
-Xstarty=(points.points[0].y+points.points[2].y)*.5;
-
 geometry_msgs::Point trans;
-trans=points.points[4];
+trans=SubmapList_.submap[0].pose.position;
 std::vector< std::vector<float>  > V;
 std::vector<float> xnew;
 xnew.push_back( trans.x);xnew.push_back( trans.y);
@@ -181,6 +148,9 @@ std::vector<float> x_rand,x_nearest,x_new;
 
 // Main loop
 while (ros::ok()){
+    initMap(mapData,init_map_x,init_map_y,Xstartx,Xstarty,points);
+    pub.publish(points) ;
+
     // Sample free
     int init_id=0;
     int min_index;

@@ -22,8 +22,50 @@ if (n<0.0){return -1.0;}
 else{return 1.0;}
 }
 
+void initMap(nav_msgs::OccupancyGrid& mapData,float& init_map_x, float& init_map_y,float& Xstartx, float& Xstarty,visualization_msgs::Marker& points){
 
-//Nearest function
+    geometry_msgs::Pose OccupancyOrigin=mapData.info.origin;
+    const Rigid3d rigidTransf=cartographer_ros::ToRigid3d(OccupancyOrigin);
+    Rigid3d TFpoint=rigidTransf*Rigid3d::Translation(
+            Rigid3d::Vector(0.0,mapData.info.height*mapData.info.resolution,0.0));
+    points.points.push_back(cartographer_ros::ToGeometryMsgPose(TFpoint).position);
+    TFpoint=rigidTransf*Rigid3d::Translation(
+            Rigid3d::Vector(0.0,0.0,0.0));
+    points.points.push_back(cartographer_ros::ToGeometryMsgPose(TFpoint).position);
+    TFpoint=rigidTransf*Rigid3d::Translation(
+            Rigid3d::Vector(mapData.info.width*mapData.info.resolution,0.0,0.0));
+    points.points.push_back(cartographer_ros::ToGeometryMsgPose(TFpoint).position);
+    TFpoint=rigidTransf*Rigid3d::Translation(
+            Rigid3d::Vector(mapData.info.width*mapData.info.resolution,mapData.info.height*mapData.info.resolution,0.0));
+    points.points.push_back(cartographer_ros::ToGeometryMsgPose(TFpoint).position);
+
+    std::vector<float> temp1;
+    temp1.push_back(points.points[0].x);
+    temp1.push_back(points.points[0].y);
+
+    std::vector<float> temp2;
+
+    temp2.push_back(points.points[2].x);
+    temp2.push_back(points.points[0].y);
+
+
+    init_map_x=Norm(temp1,temp2);
+    temp1.clear();		temp2.clear();
+
+    temp1.push_back(points.points[0].x);
+    temp1.push_back(points.points[0].y);
+
+    temp2.push_back(points.points[0].x);
+    temp2.push_back(points.points[2].y);
+
+    init_map_y=Norm(temp1,temp2);
+    temp1.clear();		temp2.clear();
+
+    Xstartx=(points.points[0].x+points.points[2].x)*.5;
+    Xstarty=(points.points[0].y+points.points[2].y)*.5;
+
+
+}
 //Nearest function
 std::tuple<std::vector<float>,int> Nearest(  std::vector< std::vector<float>  > V, std::vector<float>  x){
 

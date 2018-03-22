@@ -30,7 +30,8 @@ float Norm( std::vector<float> , std::vector<float> );
 
 //sign function prototype
 float sign(float );
-
+//init map for exploration
+void initMap(nav_msgs::OccupancyGrid&,float&, float&,float&, float&,visualization_msgs::Marker&);
 //Nearest function prototype
 std::tuple<std::vector<float>, int> Nearest(  std::vector< std::vector<float>  > , std::vector<float> );
 std::tuple<std::vector<float>,int> NearestSameId(int&,std::vector<rrt_exploration::FrontierTF>&,rrt_exploration::FrontierTF,cartographer_ros_msgs::SubmapList);
