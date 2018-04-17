@@ -214,7 +214,7 @@ void checkNeighbours(nav_msgs::OccupancyGrid &mapData,std::vector<float> Xp, cha
 
     for (int i=-1;i<=1;i++){
         for(int j=-1;j<=1;j++){
-            if (Data[int(getCellIndex(cell_x+i,cell_y+j,width))]>50) obs = 1;
+            if (Data[int(getCellIndex(cell_x+i,cell_y+j,width))]>30) obs = 1;
         }
     }
 }
@@ -234,11 +234,11 @@ for (int c=0;c<stepz;c++){
 
     std::cout<<"check grid value"<<std::endl;
 
-    if (gridValue(mapsub,xi) >=50) {     obs=1; }
+    if (gridValue(mapsub,xi) >=30) {     obs=1; }
 
     if (gridValue(mapsub,xi) ==-1){      unk=1;	break;}
 
-    if (gridValue(mapsub,xi)<50) {free=1;
+    if (gridValue(mapsub,xi)<30) {free=1;
 
     }
     std::cout<<"pass grid val check"<<std::endl;
@@ -246,7 +246,7 @@ for (int c=0;c<stepz;c++){
   }
     std::cout<<"calc out"<<std::endl;
 
-//checkNeighbours(mapsub,xi,obs);
+checkNeighbours(mapsub,xi,obs);
 char out=0;
  xnew=xi;
  if (unk==1){  out=-1;}

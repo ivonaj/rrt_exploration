@@ -206,7 +206,7 @@ def gridValue(mapData,Xp):
 	 index=(  floor((pt[1]-Xstarty)/resolution)*width)+( floor((pt[0]-Xstartx)/resolution) )
 	 if (int(index) < len(Data)):
 
-		 if (Data[int(index)]>50):
+		 if (Data[int(index)]>60):
 			 return 100
 	 	 elif (i==(len(xi)-1)):
 			 return (Data[int(index)])

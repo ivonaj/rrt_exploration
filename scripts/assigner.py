@@ -44,10 +44,11 @@ def node():
 	info_multiplier=rospy.get_param('~info_multiplier',3.0)
 	hysteresis_radius=rospy.get_param('~hysteresis_radius',3.0)			#at least as much as the laser scanner range
 	hysteresis_gain=rospy.get_param('~hysteresis_gain',2.0)				#bigger than 1 (biase robot to continue exploring current region
-	frontiers_topic= rospy.get_param('~frontiers_topic','/robot_0/filtered_points')
-	n_robots = rospy.get_param('~n_robots',1)
+	frontiers_topic= rospy.get_param('~frontiers_topic','/filtered_points')
+	n_robots = rospy.get_param('~n_robots',2)
 	delay_after_assignement=rospy.get_param('~delay_after_assignement',0.5)
 	rateHz = rospy.get_param('~rate',100)
+	namespace_list = rospy.get_param('~namespace_list',['alpha'])
 	
 	rate = rospy.Rate(rateHz)
 #-------------------------------------------
@@ -66,10 +67,10 @@ def node():
 		pass
 	robots=[]
 	rospy.loginfo("0")
-	for i in range(0,n_robots):
-		robots.append(robot('/robot_'+str(i)))
+	for i in range(0,len(namespace_list)):
+		robots.append(robot(namespace_list[i]))
 	rospy.loginfo("1")
-	for i in range(0,n_robots):
+	for i in range(0,len(namespace_list)):
 		robots[i].sendGoal(robots[i].getPosition())
 		rospy.loginfo("2")
 #-------------------------------------------------------------------------
@@ -86,7 +87,7 @@ def node():
 #get number of available/busy robots
 		na=[] #available robots
 		nb=[] #busy robots
-		for i in range(0,n_robots):
+		for i in range(0,len(namespace_list)):
 			if (robots[i].getState()==1):
 				nb.append(i)
 			else:
@@ -145,7 +146,7 @@ def node():
 		if (len(id_record)>0):
 			winner_id=revenue_record.index(max(revenue_record))
 			robots[id_record[winner_id]].sendGoal(centroid_record[winner_id])
-			rospy.loginfo("robot_"+str(id_record[winner_id])+"  assigned to  "+str(centroid_record[winner_id]))	
+			rospy.loginfo(namespace_list[id_record[winner_id]]+"  assigned to  "+str(centroid_record[winner_id]))
 			rospy.sleep(delay_after_assignement)
 #------------------------------------------------------------------------- 
 		rate.sleep()
