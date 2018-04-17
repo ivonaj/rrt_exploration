@@ -129,6 +129,8 @@ line.color.a = 1.0;
 points.lifetime = ros::Duration();
 line.lifetime = ros::Duration();
 
+geometry_msgs::Point p;
+
 geometry_msgs::Point trans;
 trans=SubmapList_.submap[0].pose.position;
 std::vector< std::vector<float>  > V;
